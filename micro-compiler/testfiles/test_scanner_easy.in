@@ -1,0 +1,3 @@
+BEGIN
+READ(A1,New_A, D, B);
+END$
