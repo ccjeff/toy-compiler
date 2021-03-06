@@ -10,6 +10,7 @@ typedef struct {
 } SYMBOL;
 
 void initSymbolTable();
+void assignEntry(char* sym);
 void updateSymbolTable(char* sym, int val);
 int findIdx(char* sym);
 int symbolVal(char* sym);

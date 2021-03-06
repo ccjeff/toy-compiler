@@ -1,3 +1,4 @@
 BEGIN
-READ(A1,New_A, D, B);
+READ(Aa1, bb, cc);
+WRITE(Aa1, bb, cc);
 END$

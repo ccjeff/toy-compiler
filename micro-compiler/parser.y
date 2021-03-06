@@ -14,7 +14,9 @@ int yylex();
 %}
 
 %union {int num; char* id;}         /* Yacc definitions for micro lang*/
-// %start line
+
+%token <num> INTLITERAL
+%token <id> ID
 
 %token BEGINN
 %token END
@@ -23,21 +25,21 @@ int yylex();
 %token LPAREN
 %token RPAREN
 %token SEMICOLON
-// %token COMMA
+%token COMMA
 %token ASSIGNOP
-// %token PLUOP
-// %token MINUSOP
-%token <num> INTLITERAL
-%token <id> ID
+%token PLUOP
+%token MINUSOP
 %token SCANEOF
 
 %left PLUOP MINUSOP COMMA
+%right ASSIGNOP
+
 %type <num> exp primary
-// %type <id> assignment
+
 
 %%
 
-/* descriptions of expected inputs     corresponding actions (in MIPS) */
+/* descriptions of expected inputs     corresponding actions */
 program:
     BEGINN statements END               {if (yynerrs || yylexerrs) YYABORT; return -1;}
 ;
@@ -49,30 +51,30 @@ statements:
 
 statement:
         ID ASSIGNOP exp SEMICOLON           {updateSymbolTable($1,$3);}
-    |   READ LPAREN IDs RPAREN SEMICOLON    {;}
-    |   WRITE LPAREN exps RPAREN SEMICOLON  {;}
+    |   READ LPAREN IDs RPAREN SEMICOLON  
+    |   WRITE LPAREN exps RPAREN SEMICOLON
 ;
 
 IDs: 
-        ID      {symbolVal($1);}
-    |   IDs COMMA ID {symbolVal($3);}
+        ID           {assignEntry($1);}
+    |   IDs COMMA ID {assignEntry($3);}
 ;
 
 exps:
-        exp         {printf("%d\n", $1);}
+        exp             {printf("%d\n", $1);}
     |   exps COMMA exp  {printf("%d\n",$3);}
 ;
 
 exp:
-        primary        {$$ = $1;}
-    |   exp PLUOP primary {$$ = $1 + $3;}
+        primary             {$$ = $1;}
+    |   exp PLUOP primary   {$$ = $1 + $3;}
     |   exp MINUSOP primary {$$ = $1 - $3;}
 ;
 
 primary:
-        ID              {$$ = symbolVal($1);}
-    |   INTLITERAL      {$$ = $1;}
-    |   LPAREN exp RPAREN {$$ = $2;}
+        ID                  {$$ = symbolVal($1);}
+    |   INTLITERAL          {$$ = $1;}
+    |   LPAREN exp RPAREN   {$$ = $2;}
 ;
 
 
@@ -89,15 +91,18 @@ int main(int argc, char** argv){
         printf("wrong number of arguments.\n");
         return EXIT_FAILURE;
     } else if (argc == 2){
-        char filename[50];
+        char filename[MAX_FILENAME];
         sprintf(filename, "%s", argv[1]);
+        printf("the filename is: %s \n", argv[1]);
         // input test filename
         yyin = fopen(filename, "r");
+        printf("open succeeded \n");
     } else {
         yyin = stdin;
     }
 
     initSymbolTable();
+    printf("symbolTable inited\n");
     // call parser routines
     switch(yyparse()){
         case 0: 

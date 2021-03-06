@@ -15,8 +15,9 @@ void initSymbolTable(){
 
 int findIdx(char* sym){
     int idx = 0;
-    for (idx; idx < bufferSize; idx++)
-        if (strcmp(symbolTable[idx].id, sym) == 0) return idx;
+    for (idx; idx < bufferSize; idx++){
+        if (!strcmp(symbolTable[idx].id, sym)) return idx;
+    }
     return -1;
 }
 
@@ -30,7 +31,7 @@ int symbolVal(char* sym){
 }
 
 void updateSymbolTable(char* sym, int val){
-    int idx = findIdx(val);
+    int idx = findIdx(sym);
     if (idx == -1){
         int i = 0;
         for (i; i < bufferSize && symbolTable[i].val != -1; i++); // finds the first empty idx
@@ -41,7 +42,7 @@ void updateSymbolTable(char* sym, int val){
         }
         //Assign ID with new value
         symbolTable[i].val = val;
-        sprintf(symbolTable[i].id, sym);        
+        sprintf(symbolTable[i].id, "%s", sym);        
     } else {
         symbolTable[idx].val = val;
     }
@@ -53,14 +54,14 @@ static int isNum(char* s){
     return atoi(s);
 }
 
-void takesInput(char* s){
+void assignEntry(char* sym){
     int val;
     char temp[15];
-    printf("int for %s \n", s);
+    printf("please input int for %s \n", sym);
     fscanf(stdin, "%s", temp);
     if ((val = isNum(temp)) == -1){
         printf("should only enter integer value \n");
         exit(EXIT_FAILURE);
     }
-    updateSymbolTable(s, val);
+    updateSymbolTable(sym, val);
 }

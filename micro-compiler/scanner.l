@@ -6,6 +6,9 @@
 
     void yyerror(char* s);
     int yylex();
+
+    char buffer[32];
+    int yylexerrs;
 %}
 
 %%
@@ -25,8 +28,8 @@
 "READ"          return READ;
 "WRITE"         return WRITE;
 
-[a-zA-Z][-_a-zA-Z0-9]*	return ID;
-[1-9][0-9]*				return INTLITERAL;
+[a-zA-Z][-_a-zA-Z0-9]*	{yylval.id = strdup(yytext); return ID;}
+[1-9][0-9]*				{yylval.num = atoi(yytext); return INTLITERAL;}
 [ \t\n]                 ;
 .					printf("unexpected character\n");
 
