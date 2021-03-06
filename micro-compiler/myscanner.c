@@ -6,7 +6,6 @@ extern int yylineno;
 extern char* yytext;
 
 int main(void){
-
 	int ntoken = yylex();
 	while(ntoken) {
 		printf("%d\n", ntoken);

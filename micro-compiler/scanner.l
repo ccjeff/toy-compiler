@@ -1,5 +1,11 @@
 %{
-    #include "scanner.h"
+    // #include "scanner.h"
+    #include "y.tab.h"
+    #include "stdio.h"
+    #include "string.h"
+
+    void yyerror(char* s);
+    int yylex();
 %}
 
 %%
@@ -7,6 +13,7 @@
 :=              return ASSIGNOP;
 ,               return COMMA;
 \+               return PLUOP;
+--.*\n                  ;
 -               return MINUSOP;
 ;               return SEMICOLON;
 \(               return LPAREN;
@@ -20,7 +27,6 @@
 
 [a-zA-Z][-_a-zA-Z0-9]*	return ID;
 [1-9][0-9]*				return INTLITERAL;
-[--.*\n]                ;
 [ \t\n]                 ;
 .					printf("unexpected character\n");
 
