@@ -15,4 +15,4 @@ clean:
 micro:
 	bison -yd parser.y
 	lex scanner.l
-	gcc lex.yy.c y.tab.c parser.c -o micro.out
+	gcc lex.yy.c y.tab.c parser.c translate.c -o micro.out

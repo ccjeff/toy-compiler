@@ -4,6 +4,7 @@
 #include <ctype.h>
 // #include "scanner.h"
 #include "parser.h"
+#include "translate.h"
 
 void yyerror(char* s);
 extern int yynerrs;
@@ -31,7 +32,8 @@ int yylex();
 %token MINUSOP
 %token SCANEOF
 
-%left PLUOP MINUSOP COMMA
+%left 
+PLUOP MINUSOP COMMA
 %right ASSIGNOP
 
 %type <num> exp primary
@@ -50,19 +52,19 @@ statements:
 ;
 
 statement:
-        ID ASSIGNOP exp SEMICOLON           {updateSymbolTable($1,$3);}
+        ID ASSIGNOP exp SEMICOLON           {updateSymbolTable($1,$3); assignment($1,$3);}
     |   READ LPAREN IDs RPAREN SEMICOLON  
     |   WRITE LPAREN exps RPAREN SEMICOLON
 ;
 
 IDs: 
-        ID           {assignEntry($1);}
-    |   IDs COMMA ID {assignEntry($3);}
+        ID           {assignEntry($1); readID($1);}
+    |   IDs COMMA ID {assignEntry($3); readID($3);}
 ;
 
 exps:
-        exp             {printf("%d\n", $1);}
-    |   exps COMMA exp  {printf("%d\n",$3);}
+        exp             {printf("%d\n", $1); writeID($1);}
+    |   exps COMMA exp  {printf("%d\n",$3); writeID($3);}
 ;
 
 exp:

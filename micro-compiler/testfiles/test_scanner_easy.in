@@ -1,4 +1,5 @@
 BEGIN
 READ(Aa1, bb, cc);
-WRITE(Aa1, bb, cc);
+dd := Aa1 + 10 + 11;
+WRITE(Aa1, bb, cc, dd);
 END$
