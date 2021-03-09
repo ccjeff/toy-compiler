@@ -1,7 +1,7 @@
 %{
-    // #include "scanner.h"
+    #include "translate.h"
     #include "y.tab.h"
-    #include "stdio.h"
+    #include <stdio.h>
     #include "string.h"
 
     void yyerror(char* s);

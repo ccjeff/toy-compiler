@@ -1,10 +1,12 @@
 %{
+
+#include "translate.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
-// #include "scanner.h"
+#include <string.h>
 #include "parser.h"
-#include "translate.h"
+
 
 void yyerror(char* s);
 extern int yynerrs;
@@ -14,7 +16,11 @@ extern FILE* yyin;
 int yylex();
 %}
 
-%union {int num; char* id;}         /* Yacc definitions for micro lang*/
+%union {
+    int num;
+    char* id;
+    expr_rec expr_record;
+}         /* Yacc definitions for micro lang*/
 
 %token <num> INTLITERAL
 %token <id> ID
@@ -36,14 +42,14 @@ int yylex();
 PLUOP MINUSOP COMMA
 %right ASSIGNOP
 
-%type <num> exp primary
+%type <expr_record> exp primary
 
 
 %%
 
 /* descriptions of expected inputs     corresponding actions */
 program:
-    BEGINN statements END               {if (yynerrs || yylexerrs) YYABORT; return -1;}
+    BEGINN statements END SCANEOF              {finalize(); if (yynerrs || yylexerrs) YYABORT; return -1;}
 ;
 
 statements:
@@ -52,30 +58,63 @@ statements:
 ;
 
 statement:
-        ID ASSIGNOP exp SEMICOLON           {updateSymbolTable($1,$3); assignment($1,$3);}
+        ID ASSIGNOP exp SEMICOLON           {
+                                            assignEntry($1);
+                                            expr_rec* t = (expr_rec*)malloc(sizeof(expr_rec));
+                                            // t->val = $1;
+                                            t->kind = IDEXPR;
+                                            sprintf(t->name,"%s", $1);
+                                            assignment(*t,$3);}
     |   READ LPAREN IDs RPAREN SEMICOLON  
     |   WRITE LPAREN exps RPAREN SEMICOLON
 ;
 
 IDs: 
-        ID           {assignEntry($1); readID($1);}
-    |   IDs COMMA ID {assignEntry($3); readID($3);}
+        ID           {
+                        assignEntry($1);
+                        expr_rec temp;
+                        temp.kind = IDEXPR;
+                        strcpy(temp.name, $1);
+                        readID(temp);
+
+                    }
+    |   IDs COMMA ID {
+                        assignEntry($3);
+                        expr_rec temp;
+                        temp.kind = IDEXPR;
+                        strcpy(temp.name, $3);
+                        readID(temp);
+                    }
 ;
 
 exps:
-        exp             {printf("%d\n", $1); writeID($1);}
-    |   exps COMMA exp  {printf("%d\n",$3); writeID($3);}
+        exp             {assignEntry($1.name);writeID($1);}
+    |   exps COMMA exp  {assignEntry($3.name);writeID($3);}
 ;
 
 exp:
         primary             {$$ = $1;}
-    |   exp PLUOP primary   {$$ = $1 + $3;}
-    |   exp MINUSOP primary {$$ = $1 - $3;}
+    |   exp PLUOP primary   {
+                                $$ = gen_infix($1,"Add",$3);
+                            }
+    |   exp MINUSOP primary {$$ = gen_infix($1,"Min",$3);}
 ;
 
 primary:
-        ID                  {$$ = symbolVal($1);}
-    |   INTLITERAL          {$$ = $1;}
+        ID                  {
+                                expr_rec* t = (expr_rec*)malloc(sizeof(expr_rec));
+                                t->kind = IDEXPR;
+                                sprintf(t->name, "%s",$1);
+                                $$ = *t;
+                            }
+    |   INTLITERAL          {
+                                
+                                expr_rec* t = (expr_rec*)malloc(sizeof(expr_rec));
+                                t->kind = LITERALEXPR;
+                                t->val = $1;
+                                sprintf(t->name, "INTEGER");
+                                $$ = *t;
+                            }
     |   LPAREN exp RPAREN   {$$ = $2;}
 ;
 
@@ -86,6 +125,8 @@ int yylexerrs = 0;
 
 void yyerror(char *s) {fprintf(stderr, "Syntax Error on line %s\n", s);}
 
+
+
 /// main routine
 int main(int argc, char** argv){
     //args
@@ -95,16 +136,16 @@ int main(int argc, char** argv){
     } else if (argc == 2){
         char filename[MAX_FILENAME];
         sprintf(filename, "%s", argv[1]);
-        printf("the filename is: %s \n", argv[1]);
+        // printf("the filename is: %s \n", argv[1]);
         // input test filename
         yyin = fopen(filename, "r");
-        printf("open succeeded \n");
+        // printf("open succeeded \n");
     } else {
         yyin = stdin;
     }
-
+    printf("/////START COMPILING/////\n");
     initSymbolTable();
-    printf("symbolTable inited\n");
+    // printf("symbolTable inited\n");
     // call parser routines
     switch(yyparse()){
         case 0: 

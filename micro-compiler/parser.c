@@ -42,7 +42,8 @@ void updateSymbolTable(char* sym, int val){
         }
         //Assign ID with new value
         symbolTable[i].val = val;
-        sprintf(symbolTable[i].id, "%s", sym);        
+        sprintf(symbolTable[i].id, "%s", sym);
+        printf("Declare,%s,Integer\n", sym);        
     } else {
         symbolTable[idx].val = val;
     }
@@ -55,13 +56,23 @@ static int isNum(char* s){
 }
 
 void assignEntry(char* sym){
-    int val;
-    char temp[15];
-    printf("please input int for %s \n", sym);
-    fscanf(stdin, "%s", temp);
-    if ((val = isNum(temp)) == -1){
-        printf("should only enter integer value \n");
-        exit(EXIT_FAILURE);
-    }
+    int val = -2;
+    // char temp[15];
+    // printf("please input int for %s \n", sym);
+    // fscanf(stdin, "%s", temp);
+    // if ((val = isNum(temp)) == -1){
+    //     printf("should only enter integer value \n");
+    //     exit(EXIT_FAILURE);
+    // }
     updateSymbolTable(sym, val);
+}
+
+char* get_temp(void) {	
+	/* max temporary allocated so far*/
+   	static int max_temp = 0;	
+   	static char tempname[MAXIDLEN];
+   	max_temp++;
+   	sprintf(tempname, "Temp&%d", max_temp);
+   	assignEntry(tempname);
+   	return tempname;
 }

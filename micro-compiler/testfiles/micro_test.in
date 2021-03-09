@@ -1,0 +1,7 @@
+BEGIN
+READ(A);
+A := (2+A)+1+12;
+c := A + 1;
+d := 111111;
+WRITE(A,c,A+c);
+END$

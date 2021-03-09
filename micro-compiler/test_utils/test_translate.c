@@ -3,8 +3,9 @@
 #include "../translate.h"
 
 int main(){
-    char* testString = generate("ADD",12,"A2","");
-    printf("testString is: %s \n", testString);
+    expr_rec aa;
+    aa.val = 123;
+    printf("aa val: %d \n", aa.val);
 
     return 0;
 }

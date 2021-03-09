@@ -1,5 +1,8 @@
 BEGIN
 READ(Aa1, bb, cc);
-dd := Aa1 + 10 + 11;
-WRITE(Aa1, bb, cc, dd);
+gg := 11;
+ff := gg;
+dd := Aa1 + 10 + (11 + gg);
+WRITE(Aa1, bb, cc, dd + ff + Aa1);
+mm := (((3)+2-ff))+(2-3)-6+gg;
 END$
