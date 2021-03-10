@@ -112,7 +112,7 @@ primary:
                                 expr_rec* t = (expr_rec*)malloc(sizeof(expr_rec));
                                 t->kind = LITERALEXPR;
                                 t->val = $1;
-                                sprintf(t->name, "INTEGER");
+                                sprintf(t->name, "INTEGER");   // fake name
                                 $$ = *t;
                             }
     |   LPAREN exp RPAREN   {$$ = $2;}
@@ -124,7 +124,6 @@ primary:
 int yylexerrs = 0;
 
 void yyerror(char *s) {fprintf(stderr, "Syntax Error on line %s\n", s);}
-
 
 
 /// main routine

@@ -4,7 +4,7 @@
 #include <ctype.h>
 #include "parser.h"
 
-//symbol table
+//symbol table declare
 SYMBOL symbolTable[bufferSize];
 
 void initSymbolTable(){
@@ -21,6 +21,7 @@ int findIdx(char* sym){
     return -1;
 }
 
+/*get the value of the variable stored in symbol table*/
 int symbolVal(char* sym){
     int idx = findIdx(sym);
     if (idx == -1){
@@ -30,6 +31,7 @@ int symbolVal(char* sym){
     return symbolTable[idx].val;
 }
 
+/*change the value stored in the symbol table*/
 void updateSymbolTable(char* sym, int val){
     int idx = findIdx(sym);
     if (idx == -1){
@@ -55,8 +57,9 @@ static int isNum(char* s){
     return atoi(s);
 }
 
+/*assign a new entry for the variable*/
 void assignEntry(char* sym){
-    int val = -2;
+    int val = -2;  // the value change means the position is taken
     // char temp[15];
     // printf("please input int for %s \n", sym);
     // fscanf(stdin, "%s", temp);
@@ -67,6 +70,7 @@ void assignEntry(char* sym){
     updateSymbolTable(sym, val);
 }
 
+/*get a new temp variable name*/
 char* get_temp(void) {	
 	/* max temporary allocated so far*/
    	static int max_temp = 0;	

@@ -8,7 +8,6 @@
 
 char* generate(char* op, expr_rec source, expr_rec dest, char* temp){
     char* outputLine = malloc(sizeof(char)* MAX_STATEMENT_LEN);
-    // printf("now the kind is: %d \n", dest.kind);
     switch(dest.kind){
         case IDEXPR:
             // assign is of for ID := ID
@@ -25,7 +24,7 @@ char* generate(char* op, expr_rec source, expr_rec dest, char* temp){
                 if (source.kind == LITERALEXPR) sprintf(outputLine, "%s,%s,%d,%d", op, temp, source.val, dest.val);
                 else sprintf(outputLine, "%s,%s,%s,%d", op, temp, source.name, dest.val);
             }
-            // sprintf(outputLine, "%s,%s,%s,%d", op, temp, source.name, dest.val);
+            
             break;
         case TEMPEXPR:
             // ID := a + 12 + c
@@ -34,7 +33,7 @@ char* generate(char* op, expr_rec source, expr_rec dest, char* temp){
                 if (source.kind == LITERALEXPR) sprintf(outputLine, "%s,%d,%s,%s", op, source.val, dest.name, temp);
                 else sprintf(outputLine, "%s,%s,%s,%s", op, source.name, dest.name, temp);
             }
-            // sprintf(outputLine, "%s,%s,%s,%s", op, source.name, dest.name, temp);
+            
             break;
     }
     return outputLine;
@@ -49,9 +48,6 @@ expr_rec gen_infix(expr_rec e1, char* op, expr_rec e2){
 	/* An expr_rec with temp variant set. */
 	e_rec.kind = TEMPEXPR;
 	strcpy(e_rec.name, get_temp());
-    // printf("in generate infix : %s, %s \n", e1.name, e2.name);
-    // printf("in generate infix : %d, %d \n", e1.val, e2.val);
-
     outputLine = generate(op, e1, e2, e_rec.name);
     printf("%s\n",outputLine);
 	return e_rec;
@@ -59,7 +55,6 @@ expr_rec gen_infix(expr_rec e1, char* op, expr_rec e2){
 
 
 void assignment(expr_rec target, expr_rec source){
-    // printf("in assign begin: %s, %s \n", target.name, source.name);
     char* outputLine = generate("Store",target,source,"");
     printf("%s \n", outputLine);
 }
@@ -69,8 +64,6 @@ void readID(expr_rec inVar){
 }
 
 void writeID(expr_rec outVar){
-    // char* outputLine = generate("Write",outVar,"temp","");
-    // printf("in write translation: %s \n", outputLine); // no real val passed yet
     printf("Write,%s\n", outVar.name);
 }
 
