@@ -3,17 +3,20 @@
 
 #include <vector>
 #include <string>
-class fileIO
+class FileIO
 {
 private:
     /* data */
-    int maxLength;
-    std::vector<char> buffer;
+    std::vector<std::string> buffer;
 
 public:
-    fileIO();
-    std::vector<char> getBuffer(std::string inputName);
-    ~fileIO();
+    int lexemeBegin = 0;
+    int forward = 0;
+
+    FileIO();
+    int openFile(std::string inputName);
+    std::vector<std::string> getBuffer();
+    ~FileIO();
 };
 
 #endif
