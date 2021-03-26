@@ -8,7 +8,5 @@ enum Token {
 };
 
 
-
-
 extern int token;
 extern int line;

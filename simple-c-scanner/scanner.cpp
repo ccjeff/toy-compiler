@@ -1,32 +1,38 @@
 #include <iostream>
 #include <string>
-
+#include <string_view>
+#include <vector>
 #include "fileIO.h"
 #include "regexTree.h"
 #include "DFA.h"
+#include "scanner.h"
 
-// A regular expression consists on letters, Kleene's closure (star '*')
-// one more (plus '+'), zero or one (ques '?'), their alternatives
-// and their sequences. Here is the grammar of it.
-//
-//     expression : concat ('|' concat)* ;
-//     concat : piece* ;
-//     piece : atom ('*' | '+' | '?')? ;
-//     atom : letter | '\\' letter | '(' expression ')'
-//
-// To generate DFA from the regular expression, we need extended abstract
-// syntax tree (AST). We extends the given AST concatenating with a SHARP
-// node as the terminator.
-//
-//      (CAT <user's AST> SHARP)
-//
-//      e1|e2|e3  => (OR (OR <e1> <e2>) <e3>)
-//      (e|)      => (OR <e> EPSILON)
-//      e1 e2 e3  => (CAT (CAT <e1> <e2>) <e3>)
-//      e*        => (STAR <e>)
-//      e+        => (PLUS <e>)
-//      e?        => (QUES <e>)
-//      a         => (LETTER a)
+// all the base operations can be implemented with * and |. For example, the (+|-)?[digits]+
+// is essentially just using (+|-|digits)[digits]*
+
+std::vector<DFA*> getRules(){
+    std::vector<DFA*> allRules;
+    auto digitTree = RegexTree("(+|-|1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)*");
+    auto idTree = RegexTree("(a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z)(a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z)*(a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z|0|1|2|3|4|5|6|7|8|9|_)*");
+    auto intTokenTree = RegexTree("int");
+    auto mainTokenTree = RegexTree("main");
+    auto equalTokenTree = RegexTree("=");
+
+    DFA* intTokenDFA = new DFA(intTokenTree);
+    DFA* digitDFA = new DFA(digitTree);
+    DFA* idDFA = new DFA(idTree);
+    DFA* equalTokenDFA = new DFA(equalTokenTree);
+//    auto digitDFA = DFA(digitTree);
+//    auto idDFA = DFA(idTree);
+//    auto equalTokenDFA = DFA(equalTokenTree);
+    allRules = {intTokenDFA, digitDFA, idDFA, equalTokenDFA};
+    return allRules;
+}
+
+Token fetchToken(std::string_view inputs){
+
+}
+
 
 int main(int argc, char* argv[]){
     if (argc != 2){
@@ -37,9 +43,29 @@ int main(int argc, char* argv[]){
         std::string inputFilename = argv[1];
         FileIO contentReader;
         contentReader.openFile(inputFilename);
-        auto tree = regexTree("(a|b)*ab(a|b)*");
-        auto dfa = DFA(tree);
-        dfa.CreateDotFile("./debug.gv");
+        auto raw = contentReader.getBuffer();
+        int l,f = 0;
+
+        auto rules = getRules();
+        Token nextToken = fetchToken("TODO: content");
+
+//        auto digitTree = RegexTree("(+|-|1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)*");
+//        auto idTree = RegexTree("(a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z)(a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z)*(a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z|0|1|2|3|4|5|6|7|8|9|_)*");
+//        auto intTokenTree = RegexTree("int");
+//        auto mainTokenTree = RegexTree("main");
+//        auto equalTokenTree = RegexTree("=");
+//
+//        auto idDFA = DFA(idTree);
+//        bool isID = idDFA.simulateDFA("a_C");
+//        std::cout << isID << std::endl;
+
+//        std::vector<DFA> rules = {intTokenDFA,digitDFA,idDFA, equalTokenDFA};
+
+
+//        bool isMain = intTokenDFA.simulateDFA("a9_c");
+
+
+//        dfa.CreateDotFile("./debug.gv");
     }
     return 0;
 }
