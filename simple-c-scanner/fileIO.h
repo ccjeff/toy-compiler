@@ -11,9 +11,7 @@ class FileIO
 private:
     /* data */
     std::vector<char> content;
-    std::vector<char> buffer;
     int lexemeBegin = 0;
-    int forward = 0;
 
 public:
 
@@ -25,11 +23,7 @@ public:
 
     void increaseLex() {lexemeBegin++;}
     void retractLex() {lexemeBegin--;}
-    void increaseLexN(int n) {lexemeBegin += n;}
-    void retractLexN(int n) {lexemeBegin -= n;}
-
     int getLex() {return this->lexemeBegin;}
-    int getForward() {return this->forward;}
 
     ~FileIO();
 };
