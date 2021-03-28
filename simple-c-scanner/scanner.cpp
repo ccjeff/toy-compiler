@@ -1,3 +1,6 @@
+//
+// Created by ccjeff on 2021/3/19.
+//
 #include <iostream>
 #include <string>
 #include <string_view>
@@ -106,6 +109,7 @@ std::vector<DFA*> getRules(){
 }
 
 std::string matchHelper(std::string* input,DFA* rule,FileIO* src){
+    //returns the longest string reading from the start token matched by each DFA
     int counter = 1;
     bool firstMatch = false;
     while (counter != 0){
@@ -124,15 +128,16 @@ std::string matchHelper(std::string* input,DFA* rule,FileIO* src){
 
 int fetchToken(std::string* inputs, FileIO* src){
     // each round getting a string and return a type of token
-    // first go find the matched dfa and read until it is fucked
+    // first go find the matched dfa and read until it does not match
     auto allRules = getRules();
     std::string currentWord = "";
     int count = 0;
     int pos = -1;
     for (auto rule : allRules){
-        std::string filename = std::to_string(count);
-        filename += "_rule.gv";
-        rule->CreateDotFile(filename);
+        // DEBUG use: create a .gv file describing the DFA
+//        std::string filename = std::to_string(count);
+//        filename += "_rule.gv";
+//        rule->CreateDotFile(filename);
         auto res = matchHelper(inputs, rule, src);
         if (res.size() > currentWord.size()) {currentWord = res; pos = count;}
         count++;
@@ -268,7 +273,7 @@ std::string getIDName(int id){
 
 int main(int argc, char* argv[]){
     if (argc != 2){
-        std::cout << "should pass scanning filename and regex filename to scanner" << std::endl;
+        std::cout << "should pass scanning filename to scanner" << std::endl;
         return -1;
     }
     else{
@@ -284,10 +289,12 @@ int main(int argc, char* argv[]){
             startToken = std::string(1,contentReader->getNextChar());
             while (startToken == " " || startToken == "\t" || startToken == "\n") startToken = std::string(1,contentReader->getNextChar());
         }
-        int nextTokenID = fetchToken(&startToken, contentReader);
-        std::cout << "TOKEN TYPE: " << getIDName(nextTokenID) << std::endl;
 
-
+        auto allRules = getRules();
+        for (auto rule : allRules){
+            free(rule);
+        }
+        free(contentReader);
     }
 
     return 0;

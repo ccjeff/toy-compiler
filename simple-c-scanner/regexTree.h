@@ -19,31 +19,30 @@ namespace {
 class RegexTree {
 public:
     explicit RegexTree(std::string_view regex)
-            : root(ConcatEndNode(BuildTree(regex))), alphabet(Alphabet(root.get())) {
-        CalcFollowPos(root.get());
+            : root(ConcatEndNode(buildTree(regex))), alphabet(getAlphabets(root.get())) {
+        getFollowpos(root.get());
     }
-    /// Return an unordered_set of unique characters that exist in the regex.
+    // Return an unordered_set of unique characters that exist in the regex.
     const std::unordered_set<char>& Alphabet() const { return alphabet; }
 
-    /// Return FirstPos set for the root of the regex tree.
-    const std::unordered_set<std::size_t>& FirstPosRoot() const {
+    // Return FirstPos set for the root of the regex tree.
+    const std::unordered_set<std::size_t>& rootFirstpos() const {
         return root->firstpos;
     }
 
     /// Return the FollowPos set for a leaf in the regex tree given its position.
-    const std::unordered_set<std::size_t>& FollowPos(std::size_t pos) const {
+    const std::unordered_set<std::size_t>& followpos(std::size_t pos) const {
         return pos < leaves.size() ? leaves[pos]->followpos : empty_set;
     }
 
     /// Return true if the label of the leaf at the given position equals the
     /// given character, and return false otherwise.
-    bool CharAtPos(char character, std::size_t pos) const {
+    bool charAt(char character, std::size_t pos) const {
         return pos < leaves.size() ? leaves[pos]->label == character : false;
     }
 
-    /// Return the position of the end of the regex, which equals the number of
-    /// leaves in the regex tree.
-    std::size_t EndPos() const { return leaves.size(); }
+    // Return the position of the end of the regex
+    std::size_t endpos() const { return leaves.size(); }
 
 private:
     class Node {
@@ -121,13 +120,14 @@ private:
         explicit EndNode(std::size_t end_pos) { firstpos.insert(end_pos); }
     };
 
-    std::unique_ptr<Node> BuildTree(std::string_view regex, bool star = false);
+    std::unique_ptr<Node> buildTree(std::string_view regex, bool star = false);
 
     /// Create an EndNode and concatenate it with the root of the regex tree.
     std::unique_ptr<Node> ConcatEndNode(std::unique_ptr<RegexTree::Node> root);
-
-    std::unordered_set<char> Alphabet(Node* node);
-    void CalcFollowPos(Node* node);
+    // return all types of different alphabets characters used in the regex tree. Takes root as input.
+    std::unordered_set<char> getAlphabets(Node* n);
+    //calculate the followpos collection for each node
+    void getFollowpos(Node* n);
 
     std::vector<LeafNode*> leaves;
     std::unique_ptr<Node> root;
