@@ -31,13 +31,15 @@ std::unique_ptr<RegexTree::Node> RegexTree::BuildTree(std::string_view regex,
 
         open_parens += regex[i] == '(';
         open_parens -= regex[i] == ')';
+        if (regex == "||"){
+            return std::make_unique<UnionNode>(BuildTree("|"),BuildTree("|"));
+        }
         if (regex[i] == '|' && open_parens == 0) {
             return std::make_unique<UnionNode>(BuildTree(regex.substr(0, i)),
                                                BuildTree(regex.substr(i + 1)));
         }
     }
 
-    // TODO: support escaping `*`, `(`, `)`, and `|` with `\`
     switch (regex.back()) {
         case '*': {
             return BuildTree(regex.substr(0, regex.length() - 1), true);

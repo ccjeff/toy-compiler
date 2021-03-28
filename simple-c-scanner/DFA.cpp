@@ -92,7 +92,6 @@ bool DFA::simulateDFA(std::string_view sentence){
             if (matchCount == sentence.size()) return true;
         } else {
             // stuck at some state
-            std::cout << "DEBUG: STUCK\n";
             return false;
         }
     }

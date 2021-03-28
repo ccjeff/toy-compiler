@@ -7,8 +7,8 @@ class FileIO
 {
 private:
     /* data */
-    std::vector<std::string> content;
-    std::vector<std::string> buffer;
+    std::vector<char> content;
+    std::vector<char> buffer;
     int lexemeBegin = 0;
     int forward = 0;
 
@@ -16,13 +16,15 @@ public:
 
     FileIO();
     int openFile(const std::string inputName);
-    std::vector<std::string> getBuffer();
+    std::vector<char> getBuffer();
 
+    char getNextChar();
 
-
-    void clearBuffer() {buffer.clear();}
     void increaseLex() {lexemeBegin++;}
-    void increaseForward() {forward++;}
+    void retractLex() {lexemeBegin--;}
+    void increaseLexN(int n) {lexemeBegin += n;}
+    void retractLexN(int n) {lexemeBegin -= n;}
+
     int getLex() {return this->lexemeBegin;}
     int getForward() {return this->forward;}
 
