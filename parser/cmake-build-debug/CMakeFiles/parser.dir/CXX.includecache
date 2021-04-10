@@ -1,0 +1,32 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/ccjeff/toy-compiler-for-CSC4180/parser/src/parser.cpp
+vector
+-
+fstream
+-
+iostream
+-
+parser.h
+/Users/ccjeff/toy-compiler-for-CSC4180/parser/src/parser.h
+
+/Users/ccjeff/toy-compiler-for-CSC4180/parser/src/parser.h
+unordered_map
+-
+string
+-
+vector
+-
+iostream
+-
+scanner.h
+/Users/ccjeff/toy-compiler-for-CSC4180/parser/src/scanner.h
+
+/Users/ccjeff/toy-compiler-for-CSC4180/parser/src/scanner.h
+

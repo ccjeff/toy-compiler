@@ -1,0 +1,13 @@
+void run();
+
+int main(int a, int b){
+    while (intaa != 0){
+        int intaa = 10;
+        int bb = 101 + intaa;
+        if (bb >= 200){
+            bb >> 2;
+        }
+        intaa = intaa - 1;
+    }
+    return bb;
+}

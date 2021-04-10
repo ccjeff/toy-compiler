@@ -1,0 +1,3 @@
+/Users/ccjeff/toy-compiler-for-CSC4180/simple-c-scanner/build/CMakeFiles/rebuild_cache.dir
+/Users/ccjeff/toy-compiler-for-CSC4180/simple-c-scanner/build/CMakeFiles/edit_cache.dir
+/Users/ccjeff/toy-compiler-for-CSC4180/simple-c-scanner/build/CMakeFiles/scanner.dir
