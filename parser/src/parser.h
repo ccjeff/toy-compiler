@@ -16,13 +16,15 @@ private:
     std::unordered_map<std::string, std::vector<std::string>> productions;
     std::vector<std::string> ordered_keys;
     void printProds();
+    std::string longestCommonPrefix(std::vector<std::string>& strs);
 
 public:
     void parse(std::vector<Token> &tokens);
     void readCFG(std::string filename);
     void removeLeftRecursion();
     void removeImmediateRecursion(std::string left, std::vector<std::string> prods);
-    void debug();
+    void removeCommonLeft();
+
 };
 
 
