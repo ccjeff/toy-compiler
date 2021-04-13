@@ -1,179 +1,814 @@
 //
 // Created by ccjeff on 2021/4/7.
 //
-
-#include <vector>
-#include <fstream>
-#include <iostream>
 #include "parser.h"
 
-void parser::parse(std::vector <Token> &tokens) {
-//    removeLeftRecursion();
-    removeCommonLeft();
-    printProds();
+shared_ptr<Program> Program::parse(Scanner &scanner) {
+    if (scanner.hasToken()) {
+        shared_ptr<VarDeclarations> nodeVarDeclarations;
+        shared_ptr<Statements> nodeStatements;
 
-
-}
-
-void parser::readCFG(std::string filename) {
-    std::ifstream file(filename);
-    if (!file.is_open()) return;
-    std::string lineStr;
-    while (std::getline(file, lineStr)) {
-        lineStr.push_back('|');
-        lineStr.erase(remove_if(lineStr.begin(), lineStr.end(), isspace), lineStr.end());
-        size_t posColon = lineStr.find(':');
-        std::string left = lineStr.substr(0, posColon);
-        this->ordered_keys.push_back(left);
-        lineStr.erase(0,posColon+1);
-        std::vector<std::string> rules;
-        size_t posOr = 0;
-        while ((posOr = lineStr.find('|')) != std::string::npos) {
-            rules.push_back(lineStr.substr(0,posOr));
-            lineStr.erase(0, posOr + 1);
+        switch (scanner.getTokenType()) {
+            case ID:
+            case IF:
+            case WHILE:
+            case DO:
+            case RETURN:
+            case READ:
+            case WRITE:
+            case SEMI:
+            case INT:
+                nodeVarDeclarations = VarDeclarations::parse(scanner);
+                nodeStatements = Statements::parse(scanner);
+                return make_shared<Program>(nodeVarDeclarations,
+                                            nodeStatements);
+            default:
+                throw UnexpectedTokenException(scanner.getTokenValue());
         }
-        this->productions[left] = rules;
-        for (auto s : rules){
-            std::cout << s << std::endl;
-        }
+    } else {
+        throw UnexpectedTerminationException();
     }
-    file.close();
 }
 
-void parser::removeLeftRecursion() {
-    size_t pSize = this->productions.size();
-    for (size_t i = 0; i < pSize; i++){
-        auto nonTerm = this->ordered_keys[i];
-        auto prods = this->productions[nonTerm];  // all productions of A_i
-        for (size_t j = 0; j < i; j++){
-            auto nonTermJ = this->ordered_keys[j];  //key of A_j
-            auto jProds = this->productions[nonTermJ]; // all productions of A_j
-            std::vector<std::string>::iterator p;
-            std::vector<std::string> newProds;
-            for (p = prods.begin();p != prods.end();p++){  // sub for all A_i --> A_j gamma
-                size_t index = 0;
-                if (p->find(nonTermJ) == std::string::npos) newProds.emplace_back(*p);
-                if (p->find(nonTermJ) != std::string::npos){
-                    //should sub for all
-                    for (const auto& pj : jProds){
-                        std::string prodcpy = *p;  // copy for the original word to sub
-                        while (true){
-                            index = prodcpy.find(nonTermJ);
-                            if (index == std::string::npos) break;
-                            prodcpy.replace(index, nonTermJ.size(), pj);
-                            newProds.emplace_back(prodcpy);
-                        }
-                    }
+void Program::fillPrettyStrings(std::vector<string> &rows, unsigned indentBase, unsigned indentFactor) {
+    rows.push_back(string(indentBase * indentFactor, ' ') + "program");
+    nodeVarDeclarations->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    nodeStatements->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+}
+
+shared_ptr<VarDeclarations> VarDeclarations::parse(Scanner &scanner) {
+    if (scanner.hasToken() && scanner.getTokenType() == INT) {
+        shared_ptr<VarDeclaration> nodeVarDeclaration = VarDeclaration::parse(scanner);
+        if (scanner.hasToken() && scanner.getTokenType() == INT) {
+            return make_shared<VarDeclarations>(
+                    nodeVarDeclaration,
+                    VarDeclarations::parse(scanner)
+            );
+        } else {
+            return make_shared<VarDeclarations>(nodeVarDeclaration, nullptr);
+        }
+    } else {
+        return make_shared<VarDeclarations>(nullptr, nullptr);
+    }
+}
+
+void VarDeclarations::fillPrettyStrings(std::vector<string> &rows, unsigned indentBase, unsigned indentFactor) {
+    rows.push_back(string(indentBase * indentFactor, ' ') + "var_declarations");
+    if (nodeVarDeclaration) {
+        nodeVarDeclaration->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    }
+    if (nodeVarDeclarations) {
+        nodeVarDeclarations->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    }
+}
+
+shared_ptr<VarDeclaration> VarDeclaration::parse(Scanner &scanner) {
+    validateTokenType(scanner, INT);
+    scanner.nextToken();
+
+    shared_ptr<DeclarationList> nodeDeclarationList = DeclarationList::parse(scanner);
+
+    validateTokenType(scanner, SEMI);
+    scanner.nextToken();
+
+    return make_shared<VarDeclaration>(nodeDeclarationList);
+}
+
+void VarDeclaration::fillPrettyStrings(std::vector<string> &rows, unsigned indentBase, unsigned indentFactor) {
+    rows.push_back(string(indentBase * indentFactor, ' ') + "var_declaration");
+    nodeDeclarationList->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+}
+
+shared_ptr<DeclarationList> DeclarationList::parse(Scanner &scanner) {
+    shared_ptr<Declaration> nodeDeclaration = Declaration::parse(scanner);
+    if (scanner.hasToken() && scanner.getTokenType() == COMMA) {
+        scanner.nextToken();
+        return make_shared<DeclarationList>(
+                nodeDeclaration,
+                DeclarationList::parse(scanner)
+        );
+    } else {
+        return make_shared<DeclarationList>(nodeDeclaration, nullptr);
+    }
+}
+
+void DeclarationList::fillPrettyStrings(std::vector<string> &rows, unsigned indentBase, unsigned indentFactor) {
+    rows.push_back(string(indentBase * indentFactor, ' ') + "declaration_list");
+    nodeDeclaration->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    if (nodeDeclarationList) {
+        nodeDeclarationList->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    }
+}
+
+shared_ptr<Declaration> Declaration::parse(Scanner &scanner) {
+    validateTokenType(scanner, ID);
+    std::string valueId(scanner.getTokenValue());
+    scanner.nextToken();
+
+    if (scanner.hasToken()) {
+        int valueNumber;
+        switch (scanner.getTokenType()) {
+            case ASSIGN:
+                scanner.nextToken();
+                validateTokenType(scanner, INT_NUM);
+                valueNumber = atoi(scanner.getTokenValue().c_str());
+                scanner.nextToken();
+                return make_shared<Declaration>(
+                        valueId,
+                        valueNumber,
+                        false
+                );
+            case LSQUARE:
+                scanner.nextToken();
+                validateTokenType(scanner, INT_NUM);
+                valueNumber = atoi(scanner.getTokenValue().c_str());
+                scanner.nextToken();
+                validateTokenType(scanner, RSQUARE);
+                scanner.nextToken();
+                return make_shared<Declaration>(
+                        valueId,
+                        valueNumber,
+                        true
+                );
+            default:
+                return make_shared<Declaration>(valueId);
+        }
+    } else {
+        return make_shared<Declaration>(valueId);
+    }
+}
+
+void Declaration::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    rows.push_back(string(indentBase * indentFactor, ' ') + "declaration {id=" + valueId + "}");
+    // TODO: In detail
+}
+
+shared_ptr<CodeBlock> CodeBlock::parse(Scanner &scanner) {
+    if (scanner.hasToken()) {
+        shared_ptr<Statements> nodeStatements;
+
+        switch (scanner.getTokenType()) {
+            case LBRACE:
+                scanner.nextToken();
+                nodeStatements = Statements::parse(scanner);
+                validateTokenType(scanner, RBRACE);
+                scanner.nextToken();
+                return make_shared<CodeBlock>(nodeStatements);
+            default:
+                return make_shared<CodeBlock>(Statement::parse(scanner));
+        }
+    } else {
+        throw UnexpectedTerminationException();
+    }
+}
+
+void CodeBlock::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    rows.push_back(string(indentBase * indentFactor, ' ') + "code_block");
+    if (nodeStatement) {
+        nodeStatement->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    }
+    if (nodeStatements) {
+        nodeStatements->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    }
+}
+
+shared_ptr<Statements> Statements::parse(Scanner &scanner) {
+    shared_ptr<Statement> nodeStatement = Statement::parse(scanner);
+    if (scanner.hasToken()) {
+        switch (scanner.getTokenType()) {
+            case ID:
+            case IF:
+            case WHILE:
+            case DO:
+            case RETURN:
+            case READ:
+            case WRITE:
+            case SEMI:
+                return make_shared<Statements>(
+                        nodeStatement,
+                        Statements::parse(scanner)
+                );
+            default:
+                return make_shared<Statements>(nodeStatement, nullptr);
+        }
+    } else {
+        return make_shared<Statements>(nodeStatement, nullptr);
+    }
+}
+
+void Statements::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    rows.push_back(string(indentBase * indentFactor, ' ') + "statements");
+
+    nodeStatement->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    if (nodeStatements) {
+        nodeStatements->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    }
+}
+
+shared_ptr<Statement> Statement::parse(Scanner &scanner) {
+    if (scanner.hasToken()) {
+        shared_ptr<AssignStatement> nodeAssignStatement;
+        shared_ptr<ReadWriteStatement> nodeReadWriteStatement;
+
+        switch (scanner.getTokenType()) {
+            case ID:
+                nodeAssignStatement = AssignStatement::parse(scanner);
+                validateTokenType(scanner, SEMI);
+                scanner.nextToken();
+                return make_shared<Statement>(nodeAssignStatement);
+            case IF:
+            case WHILE:
+            case DO:
+            case RETURN:
+                return make_shared<Statement>(ControlStatement::parse(scanner));
+            case READ:
+            case WRITE:
+                nodeReadWriteStatement = ReadWriteStatement::parse(scanner);
+                validateTokenType(scanner, SEMI);
+                scanner.nextToken();
+                return make_shared<Statement>(nodeReadWriteStatement);
+            case SEMI:
+                scanner.nextToken();
+                return make_shared<Statement>();
+            default:
+                throw UnexpectedTokenException(scanner.getTokenValue());
+        }
+    } else {
+        throw UnexpectedTerminationException();
+    }
+}
+
+void Statement::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    rows.push_back(string(indentBase * indentFactor, ' ') + "statement");
+
+    if (nodeAssignStatement) {
+        nodeAssignStatement->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    } else if (nodeControlStatement) {
+        nodeControlStatement->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    } else if (nodeReadWriteStatement) {
+        nodeReadWriteStatement->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    }
+}
+
+shared_ptr<ControlStatement> ControlStatement::parse(Scanner &scanner) {
+    if (scanner.hasToken()) {
+        shared_ptr<DoWhileStatement> nodeDoWhileStatement;
+        shared_ptr<ReturnStatement> nodeReturnStatement;
+
+        switch (scanner.getTokenType()) {
+            case IF:
+                return make_shared<ControlStatement>(IfStatement::parse(scanner));
+            case WHILE:
+                return make_shared<ControlStatement>(WhileStatement::parse(scanner));
+            case DO:
+                nodeDoWhileStatement = DoWhileStatement::parse(scanner);
+                validateTokenType(scanner, SEMI);
+                scanner.nextToken();
+                return make_shared<ControlStatement>(nodeDoWhileStatement);
+            case RETURN:
+                nodeReturnStatement = ReturnStatement::parse(scanner);
+                validateTokenType(scanner, SEMI);
+                scanner.nextToken();
+                return make_shared<ControlStatement>(nodeReturnStatement);
+            default:
+                throw UnexpectedTokenException(scanner.getTokenValue());
+        }
+    } else {
+        throw UnexpectedTerminationException();
+    }
+}
+
+void
+ControlStatement::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    rows.push_back(string(indentBase * indentFactor, ' ') + "control_statement");
+
+    if (nodeIfStatement) {
+        nodeIfStatement->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    } else if (nodeWhileStatement) {
+        nodeWhileStatement->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    } else if (nodeDoWhileStatement) {
+        nodeDoWhileStatement->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    } else if (nodeReturnStatement) {
+        nodeReturnStatement->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    }
+}
+
+shared_ptr<ReadWriteStatement> ReadWriteStatement::parse(Scanner &scanner) {
+    if (scanner.hasToken()) {
+        switch (scanner.getTokenType()) {
+            case READ:
+                return make_shared<ReadWriteStatement>(ReadStatement::parse(scanner));
+            case WRITE:
+                return make_shared<ReadWriteStatement>(WriteStatement::parse(scanner));
+            default:
+                throw UnexpectedTokenException(scanner.getTokenValue());
+        }
+    } else {
+        throw UnexpectedTerminationException();
+    }
+}
+
+void
+ReadWriteStatement::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    rows.push_back(string(indentBase * indentFactor, ' ') + "read_write_statement");
+
+    if (nodeReadStatement) {
+        nodeReadStatement->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    } else if (nodeWriteStatement) {
+        nodeWriteStatement->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    }
+}
+
+shared_ptr<AssignStatement> AssignStatement::parse(Scanner &scanner) {
+    validateTokenType(scanner, ID);
+    std::string valueId(scanner.getTokenValue());
+    scanner.nextToken();
+    if (scanner.hasToken()) {
+        shared_ptr<Exp> nodeExpIndex;
+        switch (scanner.getTokenType()) {
+            case LSQUARE:
+                scanner.nextToken();
+                nodeExpIndex = Exp::parse(scanner);
+                validateTokenType(scanner, RSQUARE);
+                scanner.nextToken();
+                validateTokenType(scanner, ASSIGN);
+                scanner.nextToken();
+                return make_shared<AssignStatement>(valueId, nodeExpIndex, Exp::parse(scanner));
+            case ASSIGN:
+                scanner.nextToken();
+                return make_shared<AssignStatement>(valueId, nullptr, Exp::parse(scanner));
+            default:
+                throw UnexpectedTokenException(scanner.getTokenValue());
+        }
+    } else {
+        throw UnexpectedTerminationException();
+    }
+}
+
+void AssignStatement::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    rows.push_back(string(indentBase * indentFactor, ' ') + "assign_statement {id=" + valueId + "}");
+
+    if (nodeExpIndex) {
+        nodeExpIndex->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    }
+    nodeExp->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+}
+
+shared_ptr<IfStatement> IfStatement::parse(Scanner &scanner) {
+    shared_ptr<IfStmt> nodeIfStmt = IfStmt::parse(scanner);
+    if (scanner.hasToken() && scanner.getTokenType() == ELSE) {
+        scanner.nextToken();
+        return make_shared<IfStatement>(nodeIfStmt, CodeBlock::parse(scanner));
+    } else {
+        return make_shared<IfStatement>(nodeIfStmt, nullptr);
+    }
+}
+
+void IfStatement::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    rows.push_back(string(indentBase * indentFactor, ' ') + "if_statement");
+
+    nodeIfStmt->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    if (nodeCodeBlock) {
+        nodeCodeBlock->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    }
+}
+
+shared_ptr<IfStmt> IfStmt::parse(Scanner &scanner) {
+    validateTokenType(scanner, IF);
+    scanner.nextToken();
+
+    validateTokenType(scanner, LPAR);
+    scanner.nextToken();
+
+    shared_ptr<Exp> nodeExp = Exp::parse(scanner);
+
+    validateTokenType(scanner, RPAR);
+    scanner.nextToken();
+
+    shared_ptr<CodeBlock> nodeCodeBlock = CodeBlock::parse(scanner);
+
+    return make_shared<IfStmt>(nodeExp, nodeCodeBlock);
+}
+
+void IfStmt::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    rows.push_back(string(indentBase * indentFactor, ' ') + "if_stmt");
+
+    nodeExp->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    nodeCodeBlock->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+}
+
+shared_ptr<WhileStatement> WhileStatement::parse(Scanner &scanner) {
+    validateTokenType(scanner, WHILE);
+    scanner.nextToken();
+
+    validateTokenType(scanner, LPAR);
+    scanner.nextToken();
+
+    shared_ptr<Exp> nodeExp = Exp::parse(scanner);
+
+    validateTokenType(scanner, RPAR);
+    scanner.nextToken();
+
+    shared_ptr<CodeBlock> nodeCodeBlock = CodeBlock::parse(scanner);
+
+    return make_shared<WhileStatement>(nodeExp, nodeCodeBlock);
+}
+
+void WhileStatement::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    rows.push_back(string(indentBase * indentFactor, ' ') + "while_statement");
+
+    nodeExp->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    nodeCodeBlock->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+}
+
+shared_ptr<DoWhileStatement> DoWhileStatement::parse(Scanner &scanner) {
+    validateTokenType(scanner, DO);
+    scanner.nextToken();
+
+    shared_ptr<CodeBlock> nodeCodeBlock = CodeBlock::parse(scanner);
+
+    validateTokenType(scanner, WHILE);
+    scanner.nextToken();
+
+    validateTokenType(scanner, LPAR);
+    scanner.nextToken();
+
+    shared_ptr<Exp> nodeExp = Exp::parse(scanner);
+
+    validateTokenType(scanner, RPAR);
+    scanner.nextToken();
+
+    return make_shared<DoWhileStatement>(nodeCodeBlock, nodeExp);
+}
+
+void
+DoWhileStatement::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    rows.push_back(string(indentBase * indentFactor, ' ') + "do_while_statement");
+
+    nodeCodeBlock->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    nodeExp->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+}
+
+shared_ptr<ReturnStatement> ReturnStatement::parse(Scanner &scanner) {
+    validateTokenType(scanner, RETURN);
+    scanner.nextToken();
+
+    return make_shared<ReturnStatement>();
+}
+
+void ReturnStatement::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    rows.push_back(string(indentBase * indentFactor, ' ') + "return_statement");
+}
+
+shared_ptr<ReadStatement> ReadStatement::parse(Scanner &scanner) {
+    validateTokenType(scanner, READ);
+    scanner.nextToken();
+
+    validateTokenType(scanner, LPAR);
+    scanner.nextToken();
+
+    validateTokenType(scanner, ID);
+    string valueId(scanner.getTokenValue());
+    scanner.nextToken();
+
+    validateTokenType(scanner, RPAR);
+    scanner.nextToken();
+
+    return make_shared<ReadStatement>(valueId);
+}
+
+void ReadStatement::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    rows.push_back(string(indentBase * indentFactor, ' ') + "read_statement {id=" + valueId + "}");
+}
+
+shared_ptr<WriteStatement> WriteStatement::parse(Scanner &scanner) {
+    validateTokenType(scanner, WRITE);
+    scanner.nextToken();
+
+    validateTokenType(scanner, LPAR);
+    scanner.nextToken();
+
+    shared_ptr<Exp> nodeExp = Exp::parse(scanner);
+
+    validateTokenType(scanner, RPAR);
+    scanner.nextToken();
+
+    return make_shared<WriteStatement>(nodeExp);
+}
+
+void WriteStatement::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    rows.push_back(string(indentBase * indentFactor, ' ') + "write_statement");
+
+    nodeExp->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+}
+
+shared_ptr<Exp> Exp::parse(Scanner &scanner) {
+    shared_ptr<Exp2> nodeExp2 = Exp2::parse(scanner);
+
+    if (scanner.hasToken() && scanner.getTokenType() == OROR) {
+        scanner.nextToken();
+        return make_shared<Exp>(nodeExp2, Exp::parse(scanner));
+    } else {
+        return make_shared<Exp>(nodeExp2, nullptr);
+    }
+}
+
+void Exp::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    rows.push_back(string(indentBase * indentFactor, ' ') + "exp");
+
+    nodeExp2->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    if (nodeExp) {
+        nodeExp->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    }
+}
+
+shared_ptr<Exp2> Exp2::parse(Scanner &scanner) {
+    shared_ptr<Exp3> nodeExp3 = Exp3::parse(scanner);
+
+    if (scanner.hasToken() && scanner.getTokenType() == ANDAND) {
+        scanner.nextToken();
+        return make_shared<Exp2>(nodeExp3, Exp2::parse(scanner));
+    } else {
+        return make_shared<Exp2>(nodeExp3, nullptr);
+    }
+}
+
+void Exp2::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    rows.push_back(string(indentBase * indentFactor, ' ') + "exp2");
+
+    nodeExp3->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    if (nodeExp2) {
+        nodeExp2->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    }
+}
+
+shared_ptr<Exp3> Exp3::parse(Scanner &scanner) {
+    shared_ptr<Exp4> nodeExp4 = Exp4::parse(scanner);
+
+    if (scanner.hasToken() && scanner.getTokenType() == OR_OP) {
+        scanner.nextToken();
+        return make_shared<Exp3>(nodeExp4, Exp3::parse(scanner));
+    } else {
+        return make_shared<Exp3>(nodeExp4, nullptr);
+    }
+}
+
+void Exp3::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    rows.push_back(string(indentBase * indentFactor, ' ') + "exp3");
+
+    nodeExp4->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    if (nodeExp3) {
+        nodeExp3->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    }
+}
+
+shared_ptr<Exp4> Exp4::parse(Scanner &scanner) {
+    shared_ptr<Exp5> nodeExp5 = Exp5::parse(scanner);
+
+    if (scanner.hasToken() && scanner.getTokenType() == AND_OP) {
+        scanner.nextToken();
+        return make_shared<Exp4>(nodeExp5, Exp4::parse(scanner));
+    } else {
+        return make_shared<Exp4>(nodeExp5, nullptr);
+    }
+}
+
+void Exp4::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    rows.push_back(string(indentBase * indentFactor, ' ') + "exp4");
+
+    nodeExp5->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    if (nodeExp4) {
+        nodeExp4->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    }
+}
+
+shared_ptr<Exp5> Exp5::parse(Scanner &scanner) {
+    shared_ptr<Exp6> nodeExp6 = Exp6::parse(scanner);
+
+    if (scanner.hasToken()) {
+        TokenType tokenOp = scanner.getTokenType();
+        switch (tokenOp) {
+            case EQ:
+            case NOTEQ:
+                scanner.nextToken();
+                return make_shared<Exp5>(nodeExp6, Exp5::parse(scanner), tokenOp);
+            default:
+                return make_shared<Exp5>(nodeExp6);
+        }
+    } else {
+        return make_shared<Exp5>(nodeExp6);
+    }
+}
+
+void Exp5::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    if (nodeExp5) {
+        rows.push_back(string(indentBase * indentFactor, ' ') + "exp5 {" + token2string(tokenOp) + "}");
+    } else {
+        rows.push_back(string(indentBase * indentFactor, ' ') + "exp5");
+    }
+
+    nodeExp6->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    if (nodeExp5) {
+        nodeExp5->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    }
+}
+
+shared_ptr<Exp6> Exp6::parse(Scanner &scanner) {
+    shared_ptr<Exp7> nodeExp7 = Exp7::parse(scanner);
+
+    if (scanner.hasToken()) {
+        TokenType tokenOp = scanner.getTokenType();
+        switch (tokenOp) {
+            case LT:
+            case GT:
+            case LTEQ:
+            case GTEQ:
+                scanner.nextToken();
+                return make_shared<Exp6>(nodeExp7, Exp6::parse(scanner), tokenOp);
+            default:
+                return make_shared<Exp6>(nodeExp7);
+        }
+    } else {
+        return make_shared<Exp6>(nodeExp7);
+    }
+}
+
+void Exp6::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    if (nodeExp6) {
+        rows.push_back(string(indentBase * indentFactor, ' ') + "exp6 {" + token2string(tokenOp) + "}");
+    } else {
+        rows.push_back(string(indentBase * indentFactor, ' ') + "exp6");
+    }
+
+    nodeExp7->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    if (nodeExp6) {
+        nodeExp6->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    }
+}
+
+shared_ptr<Exp7> Exp7::parse(Scanner &scanner) {
+    shared_ptr<Exp8> nodeExp8 = Exp8::parse(scanner);
+
+    if (scanner.hasToken()) {
+        TokenType tokenOp = scanner.getTokenType();
+        switch (tokenOp) {
+            case SHL_OP:
+            case SHR_OP:
+                scanner.nextToken();
+                return make_shared<Exp7>(nodeExp8, Exp7::parse(scanner), tokenOp);
+            default:
+                return make_shared<Exp7>(nodeExp8);
+        }
+    } else {
+        return make_shared<Exp7>(nodeExp8);
+    }
+}
+
+void Exp7::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    if (nodeExp7) {
+        rows.push_back(string(indentBase * indentFactor, ' ') + "exp7 {" + token2string(tokenOp) + "}");
+    } else {
+        rows.push_back(string(indentBase * indentFactor, ' ') + "exp7");
+    }
+
+    nodeExp8->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    if (nodeExp7) {
+        nodeExp7->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    }
+}
+
+shared_ptr<Exp8> Exp8::parse(Scanner &scanner) {
+    shared_ptr<Exp9> nodeExp9 = Exp9::parse(scanner);
+
+    if (scanner.hasToken()) {
+        TokenType tokenOp = scanner.getTokenType();
+        switch (tokenOp) {
+            case PLUS:
+            case MINUS:
+                scanner.nextToken();
+                return make_shared<Exp8>(nodeExp9, Exp8::parse(scanner), tokenOp);
+            default:
+                return make_shared<Exp8>(nodeExp9);
+        }
+    } else {
+        return make_shared<Exp8>(nodeExp9);
+    }
+}
+
+void Exp8::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    if (nodeExp8) {
+        rows.push_back(string(indentBase * indentFactor, ' ') + "exp8 {" + token2string(tokenOp) + "}");
+    } else {
+        rows.push_back(string(indentBase * indentFactor, ' ') + "exp8");
+    }
+
+    nodeExp9->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    if (nodeExp8) {
+        nodeExp8->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    }
+}
+
+shared_ptr<Exp9> Exp9::parse(Scanner &scanner) {
+    shared_ptr<Exp10> nodeExp10 = Exp10::parse(scanner);
+
+    if (scanner.hasToken()) {
+        TokenType tokenOp = scanner.getTokenType();
+        switch (tokenOp) {
+            case DIV_OP:
+            case MUL_OP:
+                scanner.nextToken();
+                return make_shared<Exp9>(nodeExp10, Exp9::parse(scanner), tokenOp);
+            default:
+                return make_shared<Exp9>(nodeExp10);
+        }
+    } else {
+        return make_shared<Exp9>(nodeExp10);
+    }
+}
+
+void Exp9::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    if (nodeExp9) {
+        rows.push_back(string(indentBase * indentFactor, ' ') + "exp9 {" + token2string(tokenOp) + "}");
+    } else {
+        rows.push_back(string(indentBase * indentFactor, ' ') + "exp9");
+    }
+
+    nodeExp10->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    if (nodeExp9) {
+        nodeExp9->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+    }
+}
+
+shared_ptr<Exp10> Exp10::parse(Scanner &scanner) {
+    if (scanner.hasToken()) {
+        TokenType tokenOp = scanner.getTokenType();
+        switch (tokenOp) {
+            case NOT_OP:
+            case MINUS:
+                scanner.nextToken();
+                return make_shared<Exp10>(Exp11::parse(scanner), tokenOp);
+            default:
+                return make_shared<Exp10>(Exp11::parse(scanner));
+        }
+    } else {
+        throw UnexpectedTerminationException();
+    }
+}
+
+void Exp10::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    if (tokenOp == INVALID) {
+        rows.push_back(string(indentBase * indentFactor, ' ') + "exp10");
+    } else {
+        rows.push_back(string(indentBase * indentFactor, ' ') + "exp10 {" + token2string(tokenOp) + "}");
+    }
+
+    nodeExp11->fillPrettyStrings(rows, indentBase, indentFactor + 1);
+}
+
+shared_ptr<Exp11> Exp11::parse(Scanner &scanner) {
+    if (scanner.hasToken()) {
+        int valueNumber;
+        string valueId;
+        shared_ptr<Exp> nodeExp;
+
+        switch (scanner.getTokenType()) {
+            case INT_NUM:
+                valueNumber = atoi(scanner.getTokenValue().c_str());
+                scanner.nextToken();
+                return make_shared<Exp11>(valueNumber);
+            case ID:
+                valueId = scanner.getTokenValue();
+                scanner.nextToken();
+                if (scanner.hasToken() && scanner.getTokenType() == LSQUARE) {
+                    scanner.nextToken();
+                    nodeExp = Exp::parse(scanner);
+                    validateTokenType(scanner, RSQUARE);
+                    scanner.nextToken();
+                    return make_shared<Exp11>(valueId, nodeExp);
+                } else {
+                    return make_shared<Exp11>(valueId, nullptr);
                 }
-            }
-            this->productions[nonTerm] = newProds;
+            case LPAR:
+                scanner.nextToken();
+                nodeExp = Exp::parse(scanner);
+                validateTokenType(scanner, RPAR);
+                scanner.nextToken();
+                return make_shared<Exp11>(nodeExp);
+            default:
+                throw UnexpectedTokenException(scanner.getTokenValue());
         }
-        removeImmediateRecursion(nonTerm,this->productions[nonTerm]);
+    } else {
+        throw UnexpectedTerminationException();
     }
-    printProds();
 }
 
-void parser::removeImmediateRecursion(std::string left, std::vector<std::string> prods) {
-    std::string newLeft = left + "\'";
-    std::vector<std::string> newProds;
-    std::vector<std::string> oldProds;
-    bool isImmediate = false;
-    for (auto prod : prods){
-        int tag = 0;
-        if (prod.find(left) == std::string::npos) oldProds.emplace_back(prod);
-        else isImmediate = true;
-        size_t index = 0;
-        while (true){
-            index = prod.find(left, index);
-            if (index == std::string::npos) break;
-            tag++;
-            prod.erase(index, left.size());
-            prod += newLeft;
-            index += newLeft.size();
+void Exp11::fillPrettyStrings(std::vector<string> &rows, unsigned int indentBase, unsigned int indentFactor) {
+    if (isNum) {
+        rows.push_back(string(indentBase * indentFactor, ' ') + "exp11 {num=" + std::to_string(valueNum) + "}");
+    } else {
+        rows.push_back(string(indentBase * indentFactor, ' ') + "exp11 {id=" + valueId + "}");
+        if (nodeExp) {
+            nodeExp->fillPrettyStrings(rows, indentBase, indentFactor + 1);
         }
-        if (tag!=0) newProds.emplace_back(prod);
     }
-    if (isImmediate){
-        std::vector<std::string>::iterator old;
-        for (old = oldProds.begin();old != oldProds.end();old++){
-            if (*old != "@") old->append(newLeft);
-            else (*old = newLeft);
-        }
-        newProds.emplace_back("@");
-        this->productions[left] = oldProds;
-        this->productions.emplace(newLeft, newProds);
-        this->ordered_keys.emplace_back(newLeft);
-    }
-
 }
-
-
-void parser::printProds() {
-    std::cout << "the keys & vals are: " << std::endl;
-    for (const auto& a : this->productions){
-        std::cout << a.first << "----";
-        for (const auto& v : a.second){
-            std::cout << v;
-            std::cout << " ";
-        }
-        std::cout << "\n" << std::endl;
-    }
-    std::cout << "in the ordered keys: " << std::endl;
-    for (auto i : this->ordered_keys){
-        std::cout << i << " ";
-    }
-    std::cout << "\n" << std::endl;
-}
-
-std::string parser::longestCommonPrefix(std::vector<std::string> &strs) {
-    if (strs.size() == 0) return "";
-    auto longest = strs[0].size();
-
-    for (int i = 1; i < strs.size(); i++) {
-        char* word_a = strs[0].data();
-        char* word_b = strs[i].data();
-        while (*word_a != 0 && *word_b != 0 && *word_a == *word_b) {
-            ++word_a;
-            ++word_b;
-        }
-        // Update longest element.
-        if (word_a - strs[0].data() < longest) {
-            longest = word_a - strs[0].data();
-        }
-    }
-
-    *(strs[0].data() + longest) = '\0';
-
-    return strs[0].data();
-}
-
-
-void parser::removeCommonLeft() {
-    for (auto key : this->ordered_keys){
-        // get the longest prefix for the key
-        std::vector<std::string> prods;
-        prods = this->productions[key];
-        auto longestPref = longestCommonPrefix(prods);
-        std::vector<std::string> newProds;
-        std::vector<std::string>::iterator old;
-        for (old = prods.begin();old != prods.end();old++){
-            if ((*old)[0] != longestPref[0]){
-                continue;
-            } else {
-//                 add to new
-                std::string oldcpy = *old;
-                oldcpy.erase(oldcpy.begin(), oldcpy.begin()+longestPref.size());
-                newProds.emplace_back(oldcpy);
-//                remove this.
-//                prods.erase(old);
-            }
-        }
-        std::string newKey = key + "`";
-//        prods.insert(prods.begin(), longestPref + newKey);
-//        this->productions.emplace(newKey, newProds);
-    }
-    printProds();
-}
-
-
-

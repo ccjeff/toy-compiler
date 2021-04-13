@@ -7,7 +7,7 @@ int main(int a, int b){
         if (bb >= 200){
             bb >> 2;
         }
-        intaa = intaa - 1;
+        intaa = -1-1;
     }
     return bb;
 }

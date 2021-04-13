@@ -1,2 +1,2 @@
-S :A a | S b
-A :A c | S d | eps
+S:iEtS | a
+E: b
