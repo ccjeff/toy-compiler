@@ -3,6 +3,7 @@
 //
 #include "parser.h"
 
+// begin the parser routine
 shared_ptr<Program> Program::parse(Scanner &scanner) {
     if (scanner.hasToken()) {
         shared_ptr<VarDeclarations> nodeVarDeclarations;

@@ -144,10 +144,11 @@ Scanner Scanner::fromFile(std::ifstream &fin) {
     return Scanner(buffer.str());
 }
 
+/* True if there is a next token, false otherwise*/
 bool Scanner::nextToken() {
     currentTokenOff += currentTokenLen;
     currentTokenLen = 0;
-
+    // !EOF
     while (currentTokenOff < buffer.size()) {
         char ch = buffer[currentTokenOff];
         if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') {
@@ -160,7 +161,7 @@ bool Scanner::nextToken() {
     if (currentTokenOff >= buffer.size()) {
         return false;
     }
-
+    // matching token patterns
     std::smatch results;
     while (currentTokenOff + currentTokenLen + 1 <= buffer.size()) {
         auto l = buffer.cbegin() + currentTokenOff;
@@ -200,11 +201,8 @@ bool Scanner::nextToken() {
 }
 
 bool Scanner::hasToken() {
-    if (currentTokenOff >= buffer.size() ||
-        currentTokenOff + currentTokenLen > buffer.size()) {
-        return false;
-    }
-    return true;
+    return !(currentTokenOff >= buffer.size() ||
+             currentTokenOff + currentTokenLen > buffer.size());
 }
 
 TokenType Scanner::getTokenType() const {

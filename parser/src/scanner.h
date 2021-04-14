@@ -41,16 +41,20 @@ private:
 
     unordered_map<string, TokenType> special2token, keyword2token;
     string buffer;
-    size_t currentTokenOff, currentTokenLen;
+    size_t currentTokenOff, currentTokenLen;  // current position pointer of the scanner
     TokenType currentTokenType;
 
 public:
+    /* construct scanner from the buffer */
     explicit Scanner(string buffer);
 
+    /* construct the scanner from file*/
     static Scanner fromFile(std::ifstream &fin);
 
+    /* True if there is a next token, false otherwise*/
     bool nextToken();
 
+    /* Scanner containing a token to read*/
     bool hasToken();
 
     TokenType getTokenType() const;

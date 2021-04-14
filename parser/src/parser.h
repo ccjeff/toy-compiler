@@ -19,6 +19,7 @@ using std::string;
 using std::shared_ptr;
 using std::make_shared;
 
+// throw out error message in parser caused by unexpected termination
 class UnexpectedTerminationException : public std::exception {
 private:
     string expectTokenValue;
@@ -41,6 +42,7 @@ public:
     }
 };
 
+//Throw out exception for unexpected token. Means a syntax error.
 class UnexpectedTokenException : public std::exception {
 private:
     string actualTokenValue, expectTokenValue;
@@ -66,6 +68,7 @@ public:
     }
 };
 
+// the general syntax node for the AST. Inherited by different nodes.
 class AbstractSyntaxNode {
 public:
     static void validateTokenType(Scanner &scanner, TokenType tokenType) {
