@@ -1,0 +1,15 @@
+int  inta;
+int input;
+input = 9;
+inta = 12 + 10;
+scanf(input);
+
+if(inta >= 23){
+    printf(inta);
+} else {
+    while(inta != 25){
+        input = input + 1;
+    }
+}
+printf(input);
+return;

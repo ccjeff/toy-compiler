@@ -1,5 +1,7 @@
 BEGIN
  READ(New_A);
- New_B:=(((1-(7)+(4+6)))-(3 - 1));-- a 
+ New_B:=(((1-(7)+(4+6)))-(3 - 1));
+ New_C := 12 + 13;
+ -- a 
  WRITE(New_B,New_A);
 END$

@@ -42,6 +42,16 @@ addi $sp,$sp,4
 sw $zero,28($fp)
 lw $t1,24($fp)
 sw $t1,28($fp)
+addi $sp,$sp,4
+sw $zero,32($fp)
+lw $t1,32($fp)
+addi $t2,$t1,12
+addi $t3,$t2,13
+sw $t3,32($fp)
+addi $sp,$sp,4
+sw $zero,36($fp)
+lw $t1,32($fp)
+sw $t1,36($fp)
 lw $t1,28($fp)
 li $v0,1
 move $a0,$t1
