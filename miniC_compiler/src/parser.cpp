@@ -374,7 +374,7 @@ shared_ptr<IfStatement> IfStatement::parse(Scanner &scanner, Translator &transla
         scanner.nextToken();
         std::cout << "Else" << std::endl;
         auto res = make_shared<IfStatement>(nodeIfStmt, CodeBlock::parse(scanner, translator));
-
+        std::cout << "END Else" << std::endl;
         return res;
     } else {
         auto res = make_shared<IfStatement>(nodeIfStmt, nullptr);

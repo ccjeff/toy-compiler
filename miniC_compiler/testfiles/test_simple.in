@@ -4,12 +4,13 @@ input = 9;
 inta = 12 + 10;
 scanf(input);
 
-if(inta >= 23){
+if(input < 23){
     printf(inta);
 } else {
     while(inta != 25){
-        input = input + 1;
+        inta = inta + 1;
     }
 }
 printf(input);
+printf(inta);
 return;
